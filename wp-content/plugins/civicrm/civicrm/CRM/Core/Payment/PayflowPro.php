@@ -311,6 +311,7 @@ class CRM_Core_Payment_PayflowPro extends CRM_Core_Payment {
       'COMMENT1' => $comment1,
       //'COMMENT2' => $mode,
       'COMMENT2' => $comment2,
+      'PHONENUM' => array_key_exists('phone-Primary-1',$params) ? $params['phone-Primary-1'] : '',
 //END.tho
       'INVNUM' => urlencode($params['invoiceID']),
       'ORDERDESC' => urlencode($params['description']),
