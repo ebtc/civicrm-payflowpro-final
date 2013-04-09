@@ -332,10 +332,12 @@ class CRM_Core_Payment_PayflowPro extends CRM_Core_Payment {
       //Amount of the initial Transaction. Required
       $payflow_query_array['ACTION'] = 'A';
       //A for add recurring (M-modify,C-cancel,R-reactivate,I-inquiry,P-payment
+      //
 //START.tho.270313
       //$payflow_query_array['PROFILENAME'] = urlencode('RegularContribution');
       $payflow_query_array['PROFILENAME'] = $params['billing_last_name'].$params['billing_first_name'].' '.date('m-d-Y');
 //END.tho.270313
+//
       //A for add recurring (M-modify,C-cancel,R-reactivate,I-inquiry,P-payment
       if ($params['installments'] > 0) {
         $payflow_query_array['TERM'] = $params['installments'] - 1;
