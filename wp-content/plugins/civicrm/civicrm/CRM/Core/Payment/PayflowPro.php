@@ -13,13 +13,11 @@
 /*
  * convert to a name/value pair (nvp) string
  */
-function payflowpro_convert_to_nvp($payflow_query_array) {
-    foreach ($payflow_query_array as $key => $value) {
-        $payflow_query[] = $key . '[' . strlen($value) . ']=' . $value;
+function payflowpro_convert_to_nvp($query) {
+    foreach ($query as $key => $value) {
+        $nvp[] = $key . '[' . strlen($value) . ']=' . $value;
     }
-    $payflow_query = implode('&', $payflow_query);
-
-    return $payflow_query;
+    return implode('&', $nvp);
 }
 /*
     * Submit transaction using CuRL
@@ -29,9 +27,10 @@ function payflowpro_convert_to_nvp($payflow_query_array) {
     */
 function payflowpro_submit_transaction($submiturl, $payflow_query) {
     /*
-        * Submit transaction using CuRL
-        */
-    // get data ready for API
+     * Submit transaction using CuRL
+     */
+
+// get data ready for API
     $user_agent = "CiviCRM Payflow Api";
     // Here's your custom headers; adjust appropriately for your setup:
     $headers[] = "Content-Type: text/namevalue";
@@ -100,7 +99,7 @@ function payflowpro_submit_transaction($submiturl, $payflow_query) {
         $responseHeaders = curl_getinfo($ch);
         if ($responseHeaders['http_code'] != 200) {
         // Let's wait 5 seconds to see if its a temporary network issue.
-        sleep(5);
+	sleep(5);
         }
         elseif ($responseHeaders['http_code'] == 200) {
         // we got a good response, drop out of loop.
@@ -623,12 +622,11 @@ class CRM_CRM_Core_Payment_PayflowPro_Update {
     var $returnError = 0;
     
     public function __construct($params) {
-
+	/*
         foreach ($params as $name => $value) {
             $this->$name = $value;
         }
-
-        // fixme: more params verification
+	*/
     }
 
     public function run() {
@@ -643,16 +641,17 @@ class CRM_CRM_Core_Payment_PayflowPro_Update {
         $r = CRM_Core_DAO::executeQuery(
         "SELECT id,trxn_id,invoice_id,payment_processor_id 
         FROM civicrm_contribution_recur 
-        WHERE contribution_status_id='2' OR contribution_status_id='5'");
+        WHERE contribution_status_id='2' OR contribution_status_id='5'"); //select only 'pending' or 'in progress'
         while ($r->fetch()) {
-            $info = $this->getRecurInfo($this->getPaymentProcessorInfo($r->payment_processor_id), $this->getProfileID($r->invoice_id));
+            $info = $this->getRecurInfo($this->getPaymentProcessorInfo($r->payment_processor_id), 
+           				$this->getProfileID($r->invoice_id));
 
             CRM_Core_Error::debug_log_message('CRM_CRM_Core_Payment_PayflowPro_Update checking ' . $r->invoice_id, false);
             CRM_Core_Error::debug_var('CRM_CRM_Core_Payment_PayflowPro_Update $status', $info, false);
             if($info['result'] == '0' && $info['status'] != 2) {
                 $fail = $info['failed_payments'];
                 $next = $info['next'];
-                $left = $info['left']; // it shouldn't be assigned to cycle day
+                $left = $info['left']; //TODO: it shouldn't be assigned to cycle day
                 $status = $info['status'];
                 CRM_Core_DAO::executeQuery(
                 "UPDATE 
@@ -719,9 +718,7 @@ class CRM_CRM_Core_Payment_PayflowPro_Update {
         );
 
         $payflow_query = payflowpro_convert_to_nvp($payflow_query_array);
-        CRM_Core_Error::debug_var('CRM_CRM_Core_Payment_PayflowPro_Update $payflow_query', $payflow_query, false);
         $responseData = payflowpro_submit_transaction($info['url'], $payflow_query);
-        CRM_Core_Error::debug_var('CRM_CRM_Core_Payment_PayflowPro_Update $responseData', $responseData, false);
 
         $result = strstr($responseData, "RESULT");
         $nvpArray = array();
